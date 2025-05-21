@@ -88,6 +88,8 @@ tibble(final) %>%
 summary(clean_dat$date)
 
 write_csv(final, "cities/portland/current.csv")
+write_csv(dat, "cities/portland/full_uncleaned_current.csv")
+
 
 final %>% 
   group_by(year, desc_crime_type) %>% 
