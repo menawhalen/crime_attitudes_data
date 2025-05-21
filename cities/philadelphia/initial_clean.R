@@ -42,18 +42,18 @@ clean_dat <- dat %>%
   mutate(date = ymd(dispatch_date), # change to date
          ofns_desc = str_to_lower(text_general_code)) %>%  # make to lower case
   select(-c(dispatch_date, text_general_code)) %>%
-  filter(date > ymd("2015-12-31")) %>%
+  filter(date > ymd("2015-12-31")) %>% 
   filter(!is.na(lat) & !is.na(lng)) %>% ## cant use if missing
   mutate(desc_crime_type = case_when(
     str_detect(ofns_desc, "murder|manslaughter|homicide") ~ "homicide",
+    str_detect(ofns_desc, "motor vehicle") ~ "mvt",
     str_detect(ofns_desc, "sex|rape") ~ "sex crimes",
     str_detect(ofns_desc, "robbery") ~ "robbery",
     str_detect(ofns_desc, "assault") ~ "assault",
     str_detect(ofns_desc, "larceny|theft") ~ "theft",
     str_detect(ofns_desc, "burglary") ~ "burglary",
     str_detect(ofns_desc, "arson") ~ "arson",
-    str_detect(ofns_desc, "harrassment") ~ "harrassment",
-    str_detect(ofns_desc, "motor vehicle") ~ "harrassment",
+    #str_detect(ofns_desc, "harrassment") ~ "harrassment",
     str_detect(ofns_desc, "weapon") ~ "weapon",
     str_detect(ofns_desc, "drug|narcotic") ~ "drugs",
     .default = "other"
