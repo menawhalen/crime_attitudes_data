@@ -114,7 +114,7 @@ joined_zip <- st_join(st_as_sf(clean_dat, coords = c("longitude", "latitude"), c
 
 zip_crime <- joined_zip %>% 
   tibble() %>% 
-  mutate(year_crime = ifelse(year(date) > 2023, 2023, year(date))) %>% ## assumes pop after 2023 is same as 2023 and actually comes from 2021 in larger dataset
+  mutate(year_crime = ifelse(year(date) > 2023, 2023, year(date))) %>% ## assumes pop after 2023 is same as 2023 and actually comes from same 2021 shapefiles in larger dataset
   filter(year == year_crime) %>% 
   select(date, desc_crime_type, geoid, estimate)
 
