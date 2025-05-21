@@ -11,18 +11,21 @@ dat23 <- read_csv("cities/nyc/old_data/newYork_crimeOLD.csv") %>% clean_names()
 ### really has 8 mil rows so probs it
 dat24 <- read_csv("cities/nyc/old_data/newYork_crime_historic.csv") %>% clean_names()
 ###############
+summary(mdy(dat23$cmplnt_fr_dt))## only part of 2023 to june
+summary(mdy(dat24$cmplnt_fr_dt))## ends at the end of 2022
+summary(mdy(dat25$cmplnt_fr_dt))### has mostly 2025 till march but not a lot of 2023-2024
 #### combining dataset and remove duplicates
 
-names(dat23) %in% names(dat24)
+# names(dat23) %in% names(dat24)
 
 dat_list <- list(dat23, dat24, dat25) %>% map( ~ .x %>% 
   select(cmplnt_num, cmplnt_fr_dt, ofns_desc, rpt_dt, latitude, longitude))
-
+dat_list[[3]]$cmplnt_num <- as.character(dat_list[[3]]$cmplnt_num)
 bind_rows(dat_list) %>% 
   pull(cmplnt_num) %>% unique() %>% length()
-8769684-8768580
+8768018
 ## only a thousand-ish duplicated list
-
+## total 8769183
 dat <- bind_rows(dat_list)
 ## but distinct only say 1 is repeated
 dat %>% 
@@ -33,7 +36,7 @@ dups_cmplnt <- dat %>%
   count() %>% 
   filter(n > 1) %>% 
   pull(cmplnt_num)
-
+## all of these are older from early 2000's
 doubles <- dat %>% 
   filter(cmplnt_num %in% dups_cmplnt) %>% 
   arrange(cmplnt_num)
