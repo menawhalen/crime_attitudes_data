@@ -84,7 +84,7 @@ final <- zip_crime %>%
   mutate(rate = count/population*100000)
 
 write_csv(final, "cities/philadelphia/current.csv")
-
+write_csv(dat, "cities/philadelphia/full_uncleaned_current.csv")
 
 clean_dat %>% 
   mutate(year = year(date)) %>% 

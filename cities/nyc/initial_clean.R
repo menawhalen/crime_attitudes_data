@@ -138,6 +138,7 @@ tibble(final) %>%
 
 write_csv(final, "cities/nyc/current.csv")
 ### the year of 2024 is missing and too low for numbers across all zip codes
+write_csv(dat, "cities/nyc/full_uncleaned_current.csv")
 
 clean_dat %>% 
   mutate(year = year(date)) %>% 
