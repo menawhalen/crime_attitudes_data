@@ -78,8 +78,9 @@ zip_crime <- clean_dat %>%
 final <- zip_crime %>% 
   rename(zcta = zip_code, population = estimate) %>% 
   mutate(month = month(date, label = T, abbr = T),
-         year = year(date)) %>% 
-  group_by(month, year, zcta, desc_crime_type, population) %>% 
+         year = year(date),
+         city = "san_antonio") %>% 
+  group_by(city, month, year, zcta, desc_crime_type, population) %>% 
   tally(name = "count") %>% 
   mutate(rate = count/population*100000)
 

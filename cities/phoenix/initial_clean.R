@@ -45,7 +45,7 @@ clean_dat <- dat %>%
          ofns_desc = str_to_lower(ucr_crime_category),
          zip = factor(zip)) %>%  # make to lower case
   select(-c(occurred_on, ucr_crime_category)) %>%
-  filter(date > ymd("2015-12-31")) %>%
+  filter(date > ymd_hm("2015-12-31 23:59")) %>%
   mutate(desc_crime_type = case_when(
     str_detect(ofns_desc, "murder|manslaughter|homicide") ~ "homicide",
     str_detect(ofns_desc, "motor vehicle") ~ "mvt",
@@ -75,8 +75,9 @@ zip_crime <- clean_dat %>%
 final <- zip_crime %>% 
   rename(zcta = zip, population = estimate) %>% 
   mutate(month = month(date, label = T, abbr = T),
-         year = year(date)) %>% 
-  group_by(month, year, zcta, desc_crime_type, population) %>% 
+         year = year(date),
+         city = "phoenix") %>% 
+  group_by(city, month, year, zcta, desc_crime_type, population) %>% 
   tally(name = "count") %>% 
   mutate(rate = count/population*100000)
 
