@@ -4,49 +4,60 @@ library(sf)
 library(janitor)
 library(viridis)
 
-## read in data
-dat25 <- read_csv("cities/nyc/old_data/crime_pull25.csv") %>% clean_names()
+file_names <- list.files(path = "cities/nyc/old_data", pattern = ".csv")
 
-dat23 <- read_csv("cities/nyc/old_data/newYork_crimeOLD.csv") %>% clean_names()
-### really has 8 mil rows so probs it
-dat24 <- read_csv("cities/nyc/old_data/newYork_crime_historic.csv") %>% clean_names()
-###############
-summary(mdy(dat23$cmplnt_fr_dt))## only part of 2023 to june
-summary(mdy(dat24$cmplnt_fr_dt))## ends at the end of 2022
-summary(mdy(dat25$cmplnt_fr_dt))### has mostly 2025 till march but not a lot of 2023-2024
-#### combining dataset and remove duplicates
+dat_files <- map(file_names, ~ read_csv(str_c("cities/nyc/old_data/", .x), col_types = cols(DR_NO = col_double())) 
+                 %>% clean_names)
+names(dat_files[[1]]) == names(dat_files[[3]])
+names(dat_files[[4]]) == names(dat_files[[2]])
+names(dat_files[[5]]) == names(dat_files[[2]])
 
-# names(dat23) %in% names(dat24)
+dat1 <- bind_rows(dat_files[[1]] %>% mutate(cmplnt_num = as.character(cmplnt_num)), dat_files[[3]])
 
-dat_list <- list(dat23, dat24, dat25) %>% map( ~ .x %>% 
-  select(cmplnt_num, cmplnt_fr_dt, ofns_desc, rpt_dt, latitude, longitude))
-dat_list[[3]]$cmplnt_num <- as.character(dat_list[[3]]$cmplnt_num)
-bind_rows(dat_list) %>% 
-  pull(cmplnt_num) %>% unique() %>% length()
-8768018
-## only a thousand-ish duplicated list
-## total 8769183
-dat <- bind_rows(dat_list)
-## but distinct only say 1 is repeated
-dat %>% 
-  distinct()
+# dat1 %>% 
+#   distinct()
+## doesnt change anything
 
+dat2 <- bind_rows(dat_files[[2]], dat_files[[4]] %>% mutate(housing_psa = as.character(housing_psa)) ) %>% 
+  bind_rows(dat_files[[5]] %>% mutate(cmplnt_num = as.character(cmplnt_num))) 
+
+dat2 <- dat2 %>% 
+  distinct() ## removes 3 dups
+
+
+dat <- dat1 %>% 
+  select(cmplnt_num, cmplnt_fr_dt, ky_cd, ofns_desc, pd_cd, pd_desc, latitude, longitude) %>% 
+  bind_rows(dat2 %>% 
+  select(cmplnt_num, cmplnt_fr_dt, ky_cd, ofns_desc, pd_cd, pd_desc, latitude, longitude)) %>% 
+  distinct() 
+
+
+dat <- dat %>% 
+  mutate(date = mdy(cmplnt_fr_dt)) %>% 
+  filter(date > ymd("2015-12-31"))
+## down to 4 mill
 dups_cmplnt <- dat %>% 
   group_by(cmplnt_num) %>% 
   count() %>% 
   filter(n > 1) %>% 
-  pull(cmplnt_num)
-## all of these are older from early 2000's
+  pull(cmplnt_num) ## some 4 thousand
+
 doubles <- dat %>% 
   filter(cmplnt_num %in% dups_cmplnt) %>% 
   arrange(cmplnt_num)
-map_df(1:1104*2, ~ doubles[.x,])
-### join the two together
-dat <- dat %>% 
-  filter(!(cmplnt_num %in% dups_cmplnt)) %>% ## all those that aren't duplicated
-  bind_rows(map_df(1:1104*2, ~ doubles[.x,])) ## first row of the duplicates
+## small changes with the long/lat between files
+## all the murders have no cmplnt number
 
-## from 8769684 to 8768580
+de_dups <- doubles %>% 
+  filter(!is.na(cmplnt_num)) %>% 
+  select(-c(latitude, longitude)) %>% 
+  distinct() %>% ## little below 6k
+  left_join(doubles, multiple = "first")
+## final deduplicated 
+dat <- dat %>% 
+  filter(!(cmplnt_num %in% dups_cmplnt)) %>% 
+  bind_rows(de_dups)
+
 ###########################
 clean_dat <- dat %>%
   select(cmplnt_fr_dt, ofns_desc, latitude, longitude) %>% ## usinged cmplt_fr_dt as date since is the earliest crime date and the most accurate time of the incident
@@ -69,7 +80,7 @@ clean_dat <- dat %>%
     str_detect(ofns_desc, "drug|narcotic") ~ "drugs",
     .default = "other"
   ))
-### down to 3.6 million post 2016
+### not down that many
 
 ## do not use again only for the first time to get geoms
 # library(tidycensus)
@@ -152,4 +163,4 @@ dat %>%
   geom_bar(stat = "count")
 ## looks similar in all data
 
-## need more from 2023
+
