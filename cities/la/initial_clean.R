@@ -36,6 +36,17 @@ clean_dat <- dat %>%
   ))
 ## almost 2 million but goes back from 2010
 
+
+## issues with post 2024 so remove and replace with 
+repeat_year <- clean_dat %>% 
+  filter(date <= ymd("2024-02-29") & date >= ymd("2023-03-01")) %>% 
+  mutate(date = date %m+% years(1)) 
+
+
+clean_dat <- clean_dat %>% 
+  filter(date < ymd("2024-02-29")) %>% ## remove after march 2024
+  bind_rows(repeat_year) ## repeat march 23-24
+
 ############# zip codes
 ### zip code joins
 zips <- read_rds("us_zctas_2016_2023.rds")
