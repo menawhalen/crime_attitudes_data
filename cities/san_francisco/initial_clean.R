@@ -8,20 +8,35 @@ library(viridis)
 
 file_names <- list.files(path = "cities/san_francisco/old_data", pattern = ".csv")
 
-dat_files <- map(file_names, ~ read_csv(str_c("cities/san_francisco/old_data/", .x)) 
+dat_files <- map(file_names[1:2], ~ read_csv(str_c("cities/san_francisco/old_data/", .x)) 
                  %>% clean_names)
 ####################
 #### duplicates
 
-names(dat_files[[1]]) ## before 2018
-names(dat_files[[2]]) == names(dat_files[[3]]) ## 2 is 2018-2023 and then 3 is from 2025
+names(dat_files[[2]]) ## before 2018
+names(dat_files[[1]])  ## 
 
-dat <- dat_files[[1]] %>% 
-  select(incidnt_num, date, category, descript, x, y) %>% 
+### before goes to may 2018 after starts at 2018 jan
+
+old_2018<- dat_files[[2]] %>% 
+  mutate(date = mdy(date)) %>% 
+  filter(date > ymd("2017-12-31"))
+
+new_2018 <- dat_files[[1]] %>% 
+  filter(incident_date < ymd("2018-05-16") & incident_date > ymd("2017-12-31"))
+
+new_2018 %>% 
+  filter(incident_number %in% unique(old_2018$incidnt_num))
+
+
+
+dat <- dat_files[[2]] %>% 
+  select(incidnt_num, date, category, descript, data_loaded_at, x, y) %>% 
   rename(incident_number = incidnt_num, incident_date = date, incident_category = category, incident_description = descript, latitude = y, longitude = x) %>% 
   mutate(incident_date = mdy(incident_date)) %>%
-  bind_rows(bind_rows(dat_files[[2]], dat_files[[3]]) %>% 
-  select(incident_number, incident_date, incident_category, incident_description, latitude, longitude) %>% 
+  filter(incident_date < ymd("2017-12-31")) %>% ## remove older data from 2018. (more is in new folder)
+  bind_rows(bind_rows(dat_files[[1]]) %>% 
+  select(incident_number, incident_date, incident_category, incident_description, data_loaded_at, latitude, longitude) %>% 
   mutate(incident_number = as.character(incident_number)))
 
 
@@ -98,6 +113,13 @@ clean_dat %>%
   ggplot(aes(factor(year))) +
   geom_bar(stat = "count")
 
+
+final %>% 
+  group_by(year) %>% 
+  summarise(total = sum(count))
+
+
+
 tibble(final) %>% 
   mutate(zcta = as.numeric(zcta)) %>% 
   group_by(year, zcta) %>% 
@@ -115,8 +137,8 @@ final %>%
 
 
 
-
-
-
-
-
+dat %>% 
+  mutate(date = ymd(incident_date)) %>% 
+  filter(year(date) == 2018) %>% 
+  group_by(month = month(date)) %>% 
+  tally()
